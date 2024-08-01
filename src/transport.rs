@@ -1,6 +1,7 @@
 //! Transport trait for JSON RPC like protocol.
 use crate::protocol::Protocol;
 
+#[cfg(feature = "curl")]
 pub mod curl;
 
 /// Transport Method that it is used by the
