@@ -11,11 +11,14 @@ keywords = [ "rpc-api", "generic-api-lib", "rpc", "elite-lib", "elite-rpc" ]
 
 
 [dependencies]
-curl = "0.4.44"
 serde_json = "1.0"
 serde = "1.0"
 anyhow = "1.0.81"
 log = "0.4.17"
+curl = {  version = "0.4.44", optional = true }
 
 [dev-dependencies]
 env_logger = "0.9.3"
+
+[features]
+curl = ["dep:curl"]
