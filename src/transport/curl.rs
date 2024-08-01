@@ -8,6 +8,8 @@ use serde_json as json;
 use crate::protocol::Protocol;
 use crate::transport::Transport;
 
+use super::TransportMethod;
+
 pub struct HttpTransport<P: Protocol> {
     base_url: String,
     protocol: P,
@@ -96,9 +98,24 @@ impl<P: Protocol> Transport<P> for HttpTransport<P> {
         })
     }
 
-    fn call(&self, method: &str, request: &P::InnerType) -> anyhow::Result<P::InnerType> {
-        let request = self.protocol.to_request(method, request)?;
-        let response = self.raw_post("", &json::to_vec(&request)?)?;
-        self.protocol.from_from_request(&response, None)
+    fn call(
+        &self,
+        method: TransportMethod,
+        request: &P::InnerType,
+    ) -> anyhow::Result<P::InnerType> {
+        let response = match method {
+            TransportMethod::Get(ref url) => {
+                let (url, _) = self.protocol.to_request(url, request)?;
+                self.raw_call(&url)?
+            }
+            TransportMethod::Post(ref url) => {
+                let (url, request) = self.protocol.to_request(url, request)?;
+                self.raw_post(&url, &json::to_vec(&request)?)?
+            }
+            TransportMethod::Custom(_, _) => {
+                anyhow::bail!("Unsupported the custom transport method")
+            }
+        };
+        self.protocol.from_request(&response, None)
     }
 }

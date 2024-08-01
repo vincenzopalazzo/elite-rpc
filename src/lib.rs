@@ -11,6 +11,7 @@ pub mod transport;
 
 use crate::protocol::Protocol;
 use crate::transport::Transport;
+use crate::transport::TransportMethod;
 
 pub struct EliteRPC<T: Transport<P>, P: Protocol> {
     transport: T,
@@ -27,7 +28,11 @@ impl<P: Protocol, T: Transport<P>> EliteRPC<T, P> {
         })
     }
 
-    pub fn call(&self, method: &str, request: &P::InnerType) -> anyhow::Result<P::InnerType> {
+    pub fn call(
+        &self,
+        method: TransportMethod,
+        request: &P::InnerType,
+    ) -> anyhow::Result<P::InnerType> {
         self.transport.call(method, request)
     }
 }
@@ -35,7 +40,7 @@ impl<P: Protocol, T: Transport<P>> EliteRPC<T, P> {
 #[cfg(test)]
 mod tests {
     use crate::protocol::Protocol;
-    use crate::transport::Transport;
+    use crate::transport::{Transport, TransportMethod};
     use crate::EliteRPC;
 
     pub struct MockTransport;
@@ -52,7 +57,7 @@ mod tests {
 
         fn call(
             &self,
-            _: &str,
+            _: TransportMethod,
             _: &<MockProtocol as Protocol>::InnerType,
         ) -> anyhow::Result<<MockProtocol as Protocol>::InnerType> {
             Ok(())
@@ -62,7 +67,7 @@ mod tests {
     impl Protocol for MockProtocol {
         type InnerType = ();
 
-        fn from_from_request(
+        fn from_request(
             &self,
             _: &[u8],
             _: Option<crate::protocol::Encoding>,
@@ -77,15 +82,19 @@ mod tests {
             Ok(MockProtocol)
         }
 
-        fn to_request(&self, _: &str, _: &Self::InnerType) -> anyhow::Result<Self::InnerType> {
-            Ok(())
+        fn to_request(
+            &self,
+            _: &str,
+            _: &Self::InnerType,
+        ) -> anyhow::Result<(String, Self::InnerType)> {
+            Ok((String::new(), ()))
         }
     }
 
     #[test]
     pub fn test_init_example() -> anyhow::Result<()> {
         let rpc = EliteRPC::<MockTransport, MockProtocol>::new("")?;
-        let response = rpc.call("foo", &())?;
+        let response = rpc.call(TransportMethod::Get("foo".to_owned()), &())?;
         assert_eq!(response, ());
         Ok(())
     }

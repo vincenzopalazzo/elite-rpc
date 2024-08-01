@@ -21,14 +21,20 @@ pub trait Protocol: Clone {
         Self: Sized;
 
     /// Build the Request for this protocol.
+    ///
+    /// Returning the request to send to the transport and
+    /// also a addons info to the URL.
+    ///
+    /// Like in post there is informtion to add to the base URl.
     fn to_request(
         &self,
         method: &str,
         request: &Self::InnerType,
-    ) -> anyhow::Result<Self::InnerType>;
+    ) -> anyhow::Result<(String, Self::InnerType)>;
 
     /// Build the response fom the response
-    fn from_from_request(
+    #[allow(clippy::wrong_self_convention)]
+    fn from_request(
         &self,
         content: &[u8],
         encoding: Option<Encoding>,
