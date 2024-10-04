@@ -61,7 +61,7 @@ impl<P: Protocol> HttpTransport<P> {
         let response_code = easy.response_code()?;
 
         // Check if the response code indicates an HTTP error
-        if response_code != 200 {
+        if response_code < 200 && response_code >= 300 {
             let mut err = Error::new(response_code);
             unsafe { err.set_extra(String::from_utf8_unchecked(body)) };
             anyhow::bail!(err);
