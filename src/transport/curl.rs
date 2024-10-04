@@ -41,6 +41,12 @@ impl<P: Protocol> HttpTransport<P> {
         easy.post(true)?;
         easy.post_fields_copy(body)?;
 
+        let mut list = curl::easy::List::new();
+        list.append("Content-Type: application/json")?;
+
+        // Set the content type header
+        easy.http_headers(list)?;
+
         let mut body = Vec::new();
         {
             let mut transfer = easy.transfer();

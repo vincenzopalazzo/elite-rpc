@@ -5,7 +5,7 @@ ARGS=
 TEST_LOG_LEVEL=
 
 default: fmt
-	$(CC) build
+	$(CC) build --all-features
 
 fmt:
 	$(CC) fmt --all
