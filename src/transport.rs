@@ -4,6 +4,9 @@ use crate::protocol::Protocol;
 #[cfg(feature = "curl")]
 pub mod curl;
 
+#[cfg(feature = "bitreq")]
+pub mod bitreq;
+
 /// Transport Method that it is used by the
 /// method to build the request.
 pub enum TransportMethod {

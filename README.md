@@ -9,8 +9,17 @@ This library provides a type-safe JSON RPC client implementation for Rust, suppo
 ## Features
 
 - Type-safe JSON RPC client implementation
-- Support for multiple transport layers
+- Support for multiple transport layers (`curl`, `bitreq`)
 - Easy to use and integrate into your projects
+
+Enable a transport with a feature flag:
+
+```toml
+elite-rpc = { version = "0.0.5", features = ["bitreq"] }
+```
+
+`bitreq` is the minimal-dependency HTTP client. `curl` stays available for
+callers that already link libcurl.
 
 ## Installation
 
