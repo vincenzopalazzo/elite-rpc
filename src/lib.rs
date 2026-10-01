@@ -28,12 +28,36 @@ impl<P: Protocol, T: Transport<P>> EliteRPC<T, P> {
         })
     }
 
+    /// Wrap an already-built transport. Useful when the caller constructs
+    /// the transport with [`crate::transport::Transport::new`] itself.
+    pub fn from_transport(transport: T) -> Self {
+        Self {
+            transport,
+            phantom: PhantomData {},
+        }
+    }
+
     pub fn call(
         &self,
         method: TransportMethod,
         request: &P::InnerType,
     ) -> anyhow::Result<P::InnerType> {
         self.transport.call(method, request)
+    }
+
+    /// Async call. Only available when the transport implements
+    /// [`crate::transport::AsyncTransport`] and the `async` feature is on.
+    #[cfg(feature = "async")]
+    pub async fn call_async(
+        &self,
+        method: TransportMethod,
+        request: &P::InnerType,
+    ) -> anyhow::Result<P::InnerType>
+    where
+        T: crate::transport::AsyncTransport<P>,
+        P::InnerType: Send,
+    {
+        self.transport.call_async(method, request).await
     }
 }
 
