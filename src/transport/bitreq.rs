@@ -8,6 +8,8 @@
 use serde_json as json;
 
 use crate::protocol::Protocol;
+#[cfg(feature = "async")]
+use crate::transport::AsyncTransport;
 use crate::transport::Transport;
 
 use super::TransportMethod;
@@ -95,6 +97,59 @@ impl<P: Protocol> Transport<P> for HttpTransport<P> {
     }
 }
 
+#[cfg(feature = "async")]
+impl<P: Protocol + Sync> AsyncTransport<P> for HttpTransport<P>
+where
+    P::InnerType: Sync,
+{
+    async fn call_async(
+        &self,
+        method: TransportMethod,
+        request: &P::InnerType,
+    ) -> anyhow::Result<P::InnerType>
+    where
+        P::InnerType: Send,
+    {
+        let response = match method {
+            TransportMethod::Get(ref url) => {
+                let (url, _) = self.protocol.to_request(url, request)?;
+                self.raw_call_async(&url).await?
+            }
+            TransportMethod::Post(ref url) => {
+                let (url, request) = self.protocol.to_request(url, request)?;
+                self.raw_post_async(&url, &json::to_vec(&request)?).await?
+            }
+            TransportMethod::Custom(_, _) => {
+                anyhow::bail!("Unsupported the custom transport method")
+            }
+        };
+        self.protocol.from_request(&response, None)
+    }
+}
+
+#[cfg(feature = "async")]
+impl<P: Protocol> HttpTransport<P> {
+    pub async fn raw_post_async(&self, addons: &str, body: &[u8]) -> anyhow::Result<Vec<u8>> {
+        let response = bitreq::post(self.url(addons))
+            .with_header("Content-Type", "application/json")
+            .with_body(body.to_vec())
+            .send_async()
+            .await
+            .map_err(|err| anyhow::anyhow!(err))?;
+        check_status(&response)?;
+        Ok(response.into_bytes())
+    }
+
+    pub async fn raw_call_async(&self, addons: &str) -> anyhow::Result<Vec<u8>> {
+        let response = bitreq::get(self.url(addons))
+            .send_async()
+            .await
+            .map_err(|err| anyhow::anyhow!(err))?;
+        check_status(&response)?;
+        Ok(response.into_bytes())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -178,6 +233,35 @@ mod tests {
         handle.join().expect("server thread");
         let msg = err.to_string();
         assert!(msg.contains("500"), "{msg}");
+        Ok(())
+    }
+
+    #[cfg(feature = "async")]
+    #[tokio::test]
+    async fn post_round_trips_json_async() -> anyhow::Result<()> {
+        let server = tiny_http::Server::http("127.0.0.1:0").map_err(|err| anyhow::anyhow!(err))?;
+        let addr = server
+            .server_addr()
+            .to_ip()
+            .ok_or_else(|| anyhow::anyhow!("expected an IP listen addr"))?;
+        let expected = json::json!({"ok": true, "async": true});
+        let payload = expected.to_string();
+        let handle = std::thread::spawn(move || {
+            let request = server.recv().expect("server recv");
+            let response = tiny_http::Response::from_string(payload).with_status_code(200);
+            request.respond(response).expect("server respond");
+        });
+
+        let transport =
+            HttpTransport::build("http", "127.0.0.1", addr.port() as u64, EchoProtocol)?;
+        let response = crate::EliteRPC::from_transport(transport)
+            .call_async(
+                TransportMethod::Post("echo".to_owned()),
+                &json::json!({"ping": "pong"}),
+            )
+            .await?;
+        handle.join().expect("server thread");
+        assert_eq!(response, expected);
         Ok(())
     }
 }

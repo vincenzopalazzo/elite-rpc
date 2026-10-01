@@ -15,11 +15,13 @@ This library provides a type-safe JSON RPC client implementation for Rust, suppo
 Enable a transport with a feature flag:
 
 ```toml
-elite-rpc = { version = "0.0.5", features = ["bitreq"] }
+elite-rpc = { version = "0.0.6", features = ["bitreq", "async"] }
 ```
 
 `bitreq` is the minimal-dependency HTTP client. `curl` stays available for
-callers that already link libcurl.
+callers that already link libcurl. The `async` feature adds
+`EliteRPC::call_async` for transports that implement `AsyncTransport`
+(the bitreq backend does, via `bitreq`'s tokio client).
 
 ## Installation
 

@@ -32,3 +32,19 @@ pub trait Transport<P: Protocol> {
     fn call(&self, method: TransportMethod, request: &P::InnerType)
         -> anyhow::Result<P::InnerType>;
 }
+
+/// Async counterpart of [`Transport`].
+///
+/// Optional: a transport that can do the call without blocking the
+/// runtime implements this. Sync [`Transport::call`] stays the
+/// default so curl and other blocking backends keep compiling.
+#[cfg(feature = "async")]
+pub trait AsyncTransport<P: Protocol>: Transport<P> {
+    fn call_async(
+        &self,
+        method: TransportMethod,
+        request: &P::InnerType,
+    ) -> impl std::future::Future<Output = anyhow::Result<P::InnerType>> + Send
+    where
+        P::InnerType: Send;
+}

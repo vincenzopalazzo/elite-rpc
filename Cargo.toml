@@ -1,6 +1,6 @@
 [package]
 name = "elite-rpc"
-version = "0.0.5"
+version = "0.0.6"
 edition = "2021"
 authors = ["Vincenzo Palazzo <vincenzopalazzodev@gmail.com>"]
 license = "Apache-2.0"
@@ -18,10 +18,18 @@ log = "0.4.17"
 curl = {  version = "0.4.44", optional = true }
 bitreq = { version = "0.4", optional = true }
 
+[dependencies.tokio]
+version = "1"
+features = ["rt"]
+optional = true
+
 [dev-dependencies]
 env_logger = "0.9.3"
 tiny_http = "0.12"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 [features]
 curl = ["dep:curl"]
 bitreq = ["dep:bitreq"]
+# `async` turns on bitreq's tokio backend when that transport is also enabled.
+async = ["dep:tokio", "bitreq?/async"]
