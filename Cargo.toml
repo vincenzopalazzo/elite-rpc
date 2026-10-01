@@ -1,6 +1,6 @@
 [package]
 name = "elite-rpc"
-version = "0.0.4"
+version = "0.0.5"
 edition = "2021"
 authors = ["Vincenzo Palazzo <vincenzopalazzodev@gmail.com>"]
 license = "Apache-2.0"
@@ -16,9 +16,12 @@ serde = "1.0"
 anyhow = "1.0.81"
 log = "0.4.17"
 curl = {  version = "0.4.44", optional = true }
+bitreq = { version = "0.4", optional = true }
 
 [dev-dependencies]
 env_logger = "0.9.3"
+tiny_http = "0.12"
 
 [features]
 curl = ["dep:curl"]
+bitreq = ["dep:bitreq"]
